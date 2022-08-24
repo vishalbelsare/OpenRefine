@@ -82,7 +82,7 @@
     <commons-compress.version>1.21</commons-compress.version>
     <velocity.version>1.5</velocity.version>
     <marc4j.version>2.9.2</marc4j.version>
-    <jsoup.version>1.14.2</jsoup.version>
+    <jsoup.version>1.15.3</jsoup.version>
     <odfdom-java.version>0.10.0</odfdom-java.version>
     <vicino.version>1.2</vicino.version>
     <signpost.version>2.1.1</signpost.version>
