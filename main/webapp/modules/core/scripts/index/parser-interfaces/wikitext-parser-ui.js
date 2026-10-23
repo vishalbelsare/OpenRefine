@@ -92,6 +92,7 @@ Refine.WikitextParserUI.prototype.getOptions = function() {
   }
 
   options.storeBlankRows = this._optionContainerElmts.storeBlankRowsCheckbox[0].checked;
+  options.storeBlankColumns = this._optionContainerElmts.storeBlankColumnsCheckbox[0].checked;
   options.blankSpanningCells = this._optionContainerElmts.blankSpanningCellsCheckbox[0].checked;
   options.includeRawTemplates = this._optionContainerElmts.includeRawTemplatesCheckbox[0].checked;
   options.parseReferences = this._optionContainerElmts.parseReferencesCheckbox[0].checked;
@@ -112,10 +113,10 @@ Refine.WikitextParserUI.prototype.getOptions = function() {
 Refine.WikitextParserUI.prototype._initialize = function() {
   var self = this;
 
-  this._optionContainer.unbind().empty().html(
+  this._optionContainer.off().empty().html(
       DOM.loadHTML("core", "scripts/index/parser-interfaces/wikitext-parser-ui.html"));
   this._optionContainerElmts = DOM.bind(this._optionContainer);
-  this._optionContainerElmts.previewButton.click(function() { self._updatePreview(); });
+  this._optionContainerElmts.previewButton.on('click',function() { self._updatePreview(); });
   
   this._optionContainerElmts.previewButton.html($.i18n('core-buttons/update-preview'));
   $('#or-disable-auto-preview').text($.i18n('core-index-parser/disable-auto-preview'));
@@ -129,6 +130,7 @@ Refine.WikitextParserUI.prototype._initialize = function() {
   $('#or-import-includeRawTemplates').text($.i18n('core-index-parser/include-raw-templates'));
   $('#or-import-parseReferences').text($.i18n('core-index-parser/parse-references'));
   $('#or-import-blank').text($.i18n('core-index-parser/store-blank'));
+  $('#or-import-blank-columns').text($.i18n('core-index-parser/store-blank-columns'));
   $('#or-import-null').text($.i18n('core-index-parser/store-nulls'));
   $('#or-import-source').html($.i18n('core-index-parser/store-source'));
   $('#or-import-archive').html($.i18n('core-index-parser/store-archive'));
@@ -137,7 +139,7 @@ Refine.WikitextParserUI.prototype._initialize = function() {
 /*
   this._optionContainerElmts.encodingInput
     .val(this._config.encoding || '')
-    .click(function() {
+    .on('click',function() {
       Encoding.selectEncoding($(this), function() {
         self._updatePreview();
       });
@@ -176,6 +178,10 @@ Refine.WikitextParserUI.prototype._initialize = function() {
     this._optionContainerElmts.storeBlankRowsCheckbox.prop("checked", true);
   }
 
+  if (this._config.storeBlankColumns) {
+    this._optionContainerElmts.storeBlankColumnsCheckbox.prop("checked", true);
+  }
+
   if (this._config.guessCellValueTypes) {
     this._optionContainerElmts.guessCellValueTypesCheckbox.prop("checked", true);
   }
@@ -201,8 +207,8 @@ Refine.WikitextParserUI.prototype._initialize = function() {
         self._scheduleUpdatePreview();
     }
   };
-  this._optionContainer.find("input").bind("change", onChange);
-  this._optionContainer.find("select").bind("change", onChange);
+  this._optionContainer.find("input").on("change", onChange);
+  this._optionContainer.find("select").on("change", onChange);
 };
 
 Refine.WikitextParserUI.prototype._scheduleUpdatePreview = function() {
@@ -227,7 +233,7 @@ Refine.WikitextParserUI.prototype._updatePreview = function() {
     if (result.status === "ok") {
       self._controller.getPreviewData(function(projectData) {
         self._progressContainer.hide();
-        var container = self._dataContainer.unbind().empty();
+        var container = self._dataContainer.off().empty();
         if (projectData.rowModel.rows.length === 0) {
            $('<div>').addClass("wikitext-parser-ui-message")
                 .text($.i18n('core-index-parser/invalid-wikitext')).appendTo(container);

@@ -11,13 +11,14 @@
   <parent>
     <groupId>org.openrefine</groupId>
     <artifactId>openrefine</artifactId>
-    <version>3.6-SNAPSHOT</version>
+    <version>3.10-SNAPSHOT</version>
   </parent>
 
   <properties>
     <jee.path>/</jee.path>
     <jee.port>3333</jee.port>
     <refine.data>/tmp/refine</refine.data>
+    <skipNexusStagingDeployMojo>true</skipNexusStagingDeployMojo>
   </properties>
 
   <scm>
@@ -32,6 +33,8 @@
         <directory>src</directory>
       </resource>
     </resources>
+    <sourceDirectory>src</sourceDirectory>
+    <testSourceDirectory>tests/src</testSourceDirectory>
     <outputDirectory>classes</outputDirectory>
     <plugins>
       <plugin>
@@ -86,7 +89,7 @@
         <artifactId>maven-surefire-plugin</artifactId>
 	<version>${surefire.version}</version>
         <configuration>
-          <skip>true</skip>
+          <skipTests>${skipTests}</skipTests>
         </configuration>
       </plugin>
     </plugins>
@@ -164,6 +167,11 @@
     </dependency>
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-unixdomain-server</artifactId>
+      <version>${jetty.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-servlet</artifactId>
       <version>${jetty.version}</version>
     </dependency>
@@ -173,19 +181,59 @@
       <version>${jetty.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-util</artifactId>
+      <version>${jetty.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.openrefine.dependencies</groupId>
       <artifactId>butterfly</artifactId>
       <version>${butterfly.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-log4j12</artifactId>
-      <version>${slf4j.version}</version>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-api</artifactId>
+      <version>${log4j.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-slf4j2-impl</artifactId>
+      <version>${log4j.version}</version>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
       <version>${slf4j.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-core</artifactId>
+      <version>${log4j.version}</version>
+    </dependency>
+    <dependency> <!-- used in Refine.java, but apparently also needed by velocity? -->
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-1.2-api</artifactId>
+      <version>${log4j.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>${commons-lang3.version}</version>
+    </dependency>
+
+    <!-- test dependencies -->
+
+    <dependency>
+      <groupId>org.testng</groupId>
+      <artifactId>testng</artifactId>
+      <version>${testng.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>${mockito.version}</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 </project>

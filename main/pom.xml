@@ -11,7 +11,7 @@
   <parent>
     <groupId>org.openrefine</groupId>
     <artifactId>openrefine</artifactId>
-    <version>3.6-SNAPSHOT</version>
+    <version>3.10-SNAPSHOT</version>
   </parent>
 
   <properties>
@@ -31,14 +31,17 @@
       <resource>
         <directory>src</directory>
       </resource>
+      <resource>
+        <directory>resources</directory>
+      </resource>
     </resources>
+    <sourceDirectory>src</sourceDirectory>
     <testSourceDirectory>tests/server/src</testSourceDirectory>
     <testResources>
       <testResource>
         <directory>tests/data</directory>
       </testResource>
     </testResources>
-    <outputDirectory>webapp/WEB-INF/classes</outputDirectory>
     <plugins>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
@@ -53,6 +56,7 @@
             <configuration>
               <sources>
                 <source>src</source>
+                <source>${project.build.directory}/generated-sources/</source>
               </sources>
             </configuration>
           </execution>
@@ -63,9 +67,7 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${surefire.version}</version>
         <configuration>
-          <suiteXmlFiles>
-            <suiteXmlFile>tests/server/conf/tests.xml</suiteXmlFile>
-          </suiteXmlFiles>
+          <excludedGroups>broken</excludedGroups>
         </configuration>
       </plugin>
       <plugin>
@@ -91,9 +93,23 @@
 	<version>${maven-jar-plugin.version}</version>
         <executions>
           <execution>
+            <id>default-jar</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>webapp/WEB-INF/lib</outputDirectory>
+            </configuration>
+          </execution>
+          <execution>
+            <id>test-jar</id>
             <goals>
               <goal>test-jar</goal>
             </goals>
+            <configuration>
+              <skip>${skipTests}</skip>
+            </configuration>
           </execution>
         </executions>
       </plugin>
@@ -105,6 +121,9 @@
           <filesets>
             <fileset>
               <directory>webapp/WEB-INF/lib</directory>
+            </fileset>
+            <fileset>
+              <directory>webapp/WEB-INF/classes</directory>
             </fileset>
           </filesets>
         </configuration>
@@ -141,6 +160,19 @@
             </includeOnlyProperties>
         </configuration>
       </plugin>
+
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>org/marc4j/converter/impl/*CodeTableGenerated*</exclude>
+            <!-- Metaphone3 should be an external library and has many instructions, dominating our actual code in coverage reports -->
+            <exclude>com/google/refine/clustering/binning/Metaphone3.class</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+
     </plugins>
   </build>
 
@@ -152,34 +184,62 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
+      <groupId>org.openrefine</groupId>
+      <artifactId>core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.openrefine</groupId>
+      <artifactId>grel</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.openrefine.dependencies</groupId>
       <artifactId>butterfly</artifactId>
       <version>${butterfly.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-1.2-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-slf4j2-impl</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-core</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <version>${jackson.version}</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
-      <version>${jackson.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-log4j12</artifactId>
-      <version>${slf4j.version}</version>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-core</artifactId>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
       <version>${slf4j.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
       <version>${commons-lang3.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>commons-lang</groupId>
+      <artifactId>commons-lang</artifactId>
+      <version>2.6</version>
     </dependency>
     <dependency>
       <groupId>commons-fileupload</groupId>
@@ -187,23 +247,13 @@
       <version>${commons-fileupload.version}</version>
     </dependency>
     <dependency>
-      <groupId>commons-collections</groupId>
-      <artifactId>commons-collections</artifactId>
-      <version>${commons-collections.version}</version>
-    </dependency>
-    <dependency>
         <groupId>org.apache.commons</groupId>
         <artifactId>commons-text</artifactId>
 	<version>${commons-text.version}</version>
     </dependency>
     <dependency>
-      <groupId>commons-validator</groupId>
-      <artifactId>commons-validator</artifactId>
-      <version>${commons-validator.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>velocity</groupId>
-      <artifactId>velocity</artifactId>
+      <groupId>org.apache.velocity</groupId>
+      <artifactId>velocity-engine-core</artifactId>
       <version>${velocity.version}</version>
     </dependency>
     <dependency>
@@ -212,29 +262,31 @@
       <version>${marc4j.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-compress</artifactId>
-      <version>${commons-compress.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.jsoup</groupId>
-      <artifactId>jsoup</artifactId>
-      <version>${jsoup.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.openrefine.dependencies</groupId>
-      <artifactId>opencsv-multichar</artifactId>
-      <version>${opencsv-multichar.version}</version>
+      <groupId>com.univocity</groupId>
+      <artifactId>univocity-parsers</artifactId>
+      <version>${univocity-csv.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.poi</groupId>
       <artifactId>poi</artifactId>
       <version>${poi.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-api</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.poi</groupId>
       <artifactId>poi-ooxml</artifactId>
       <version>${poi.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-api</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.odftoolkit</groupId>
@@ -257,16 +309,12 @@
       <groupId>org.openrefine.dependencies</groupId>
       <artifactId>vicino</artifactId>
       <version>${vicino.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>oauth.signpost</groupId>
-      <artifactId>signpost-core</artifactId>
-      <version>${signpost.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>oauth.signpost</groupId>
-      <artifactId>signpost-commonshttp4</artifactId>
-      <version>${signpost.version}</version>
+      <exclusions>
+	<exclusion>
+	  <groupId>log4j</groupId>
+	  <artifactId>log4j</artifactId>
+	</exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.clojure</groupId>
@@ -279,9 +327,25 @@
       <version>${httpclient5.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpcore</artifactId>
-      <version>${httpcore.version}</version>
+      <groupId>org.apache.httpcomponents.core5</groupId>
+      <artifactId>httpcore5</artifactId>
+      <version>${httpcore5.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>xtc</groupId>
+      <artifactId>rats-runtime</artifactId>
+      <version>2.4.0</version>
+    </dependency>
+    <dependency>
+      <groupId>de.fau.cs.osr.ptk</groupId>
+      <artifactId>ptk-common</artifactId>
+      <version>3.0.8</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-csv</artifactId>
+      <version>1.14.1</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.sweble.wikitext</groupId>
@@ -319,7 +383,7 @@
       <artifactId>jaxb-api</artifactId>
       <version>${jaxb-api.version}</version>
     </dependency>
-    <dependency>
+    <dependency> <!-- Mozilla Public License Version 1.1 - for details see /OpenRefine/packaging/manual_licenses.xml -->
       <groupId>com.github.albfernandez</groupId>
       <artifactId>juniversalchardet</artifactId>
       <version>${juniversalchardet.version}</version>
@@ -339,15 +403,10 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.powermock</groupId>
-      <artifactId>powermock-module-testng</artifactId>
-      <version>${powermock.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.powermock</groupId>
-      <artifactId>powermock-api-mockito2</artifactId>
-      <version>${powermock.version}</version>
+      <groupId>org.openrefine</groupId>
+      <artifactId>core</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -355,12 +414,49 @@
       <artifactId>mockwebserver</artifactId>
       <version>${okhttp.version}</version>
       <scope>test</scope>
-     </dependency>
+    </dependency>
+    <dependency>
+      <groupId>com.squareup.okhttp3</groupId>
+      <artifactId>mockwebserver3</artifactId>
+      <version>${okhttp.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.squareup.okhttp3</groupId>
+      <artifactId>okhttp-jvm</artifactId>
+      <version>${okhttp.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.squareup.okio</groupId>
+      <artifactId>okio-jvm</artifactId>
+      <version>${okio.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>${mockito.version}</version>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpmime</artifactId>
       <version>${httpmime.version}</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-core</artifactId>
+      <version>${log4j.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-slf4j2-impl</artifactId>
+      <version>${log4j.version}</version>
+      <scope>test</scope>
+    </dependency>
+
   </dependencies>
 </project>

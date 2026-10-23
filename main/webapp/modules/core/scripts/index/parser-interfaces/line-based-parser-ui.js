@@ -63,9 +63,17 @@ Refine.LineBasedParserUI.prototype.dispose = function() {
 
 Refine.LineBasedParserUI.prototype.getOptions = function() {
   var options = {
-    encoding: $.trim(this._optionContainerElmts.encodingInput[0].value),
+    encoding: jQueryTrim(this._optionContainerElmts.encodingInput[0].value),
     recordPath: this._config.recordPath
   };
+
+  switch (this._optionContainer.find("input[name='row-separator']:checked")[0].value) {
+    case 'newline':
+      options.separator = "\\r?\\n";
+      break;
+    default:
+      options.separator = this._optionContainerElmts.rowSeparatorInput[0].value;
+  }
 
   var parseIntDefault = function(s, def) {
     try {
@@ -96,6 +104,7 @@ Refine.LineBasedParserUI.prototype.getOptions = function() {
     options.skipDataLines = -1;
   }
   options.storeBlankRows = this._optionContainerElmts.storeBlankRowsCheckbox[0].checked;
+  options.storeBlankColumns = this._optionContainerElmts.storeBlankColumnsCheckbox[0].checked;
   options.storeBlankCellsAsNulls = this._optionContainerElmts.storeBlankCellsAsNullsCheckbox[0].checked;
   options.includeFileSources = this._optionContainerElmts.includeFileSourcesCheckbox[0].checked;
   options.includeArchiveFileName = this._optionContainerElmts.includeArchiveFileCheckbox[0].checked;
@@ -108,10 +117,10 @@ Refine.LineBasedParserUI.prototype.getOptions = function() {
 Refine.LineBasedParserUI.prototype._initialize = function() {
   var self = this;
 
-  this._optionContainer.unbind().empty().html(
+  this._optionContainer.off().empty().html(
       DOM.loadHTML("core", "scripts/index/parser-interfaces/line-based-parser-ui.html"));
   this._optionContainerElmts = DOM.bind(this._optionContainer);
-  this._optionContainerElmts.previewButton.click(function() { self._updatePreview(); });
+  this._optionContainerElmts.previewButton.on('click',function() { self._updatePreview(); });
 
   $('#or-import-encoding').html($.i18n('core-index-import/char-encoding'));
   this._optionContainerElmts.previewButton.html($.i18n('core-buttons/update-preview'));
@@ -119,6 +128,7 @@ Refine.LineBasedParserUI.prototype._initialize = function() {
   $('#or-import-parseEvery').html($.i18n('core-index-parser/parse-every'));
   $('#or-import-linesIntoRow').html($.i18n('core-index-parser/lines-into-row'));
   $('#or-import-blank').text($.i18n('core-index-parser/store-blank'));
+  $('#or-import-blank-columns').text($.i18n('core-index-parser/store-blank-columns'));
   $('#or-import-null').text($.i18n('core-index-parser/store-nulls'));
   $('#or-import-source').html($.i18n('core-index-parser/store-source'));
   $('#or-import-archive').html($.i18n('core-index-parser/store-archive'));
@@ -130,14 +140,23 @@ Refine.LineBasedParserUI.prototype._initialize = function() {
   $('#or-import-rows').text($.i18n('core-index-parser/rows-data'));
   $('#or-import-load').text($.i18n('core-index-parser/load-at-most'));
   $('#or-import-rows2').text($.i18n('core-index-parser/rows-data'));
-  
+  $('#or-row-separator').text($.i18n('core-index-parser/row-separator'));
+  $('#or-row-separator-newline').text($.i18n('core-index-parser/row-separator-newline'));
+  $('#or-row-separator-regex').text($.i18n('core-index-parser/row-separator-regex'));
+
   this._optionContainerElmts.encodingInput
     .val(this._config.encoding || '')
-    .click(function() {
+    .on('click',function() {
       Encoding.selectEncoding($(this), function() {
         self._updatePreview();
       });
     });
+
+
+  var rowSeparatorValue = (this._config.separator == "\\r?\\n") ? 'newline' : 'custom';
+  this._optionContainer.find(
+      "input[name='row-separator'][value='" + rowSeparatorValue + "']").prop("checked", true);
+  this._optionContainerElmts.rowSeparatorInput[0].value = this._config.separator;
 
   this._optionContainerElmts.linesPerRowInput[0].value =
     this._config.linesPerRow.toString();
@@ -156,6 +175,9 @@ Refine.LineBasedParserUI.prototype._initialize = function() {
   }
   if (this._config.storeBlankRows) {
     this._optionContainerElmts.storeBlankRowsCheckbox.prop("checked", true);
+  }
+  if (this._config.storeBlankColumns) {
+    this._optionContainerElmts.storeBlankColumnsCheckbox.prop("checked", true);
   }
   if (this._config.storeBlankCellsAsNulls) {
     this._optionContainerElmts.storeBlankCellsAsNullsCheckbox.prop("checked", true);
@@ -178,8 +200,8 @@ Refine.LineBasedParserUI.prototype._initialize = function() {
         self._scheduleUpdatePreview();
     }
   };
-  this._optionContainer.find("input").bind("change", onChange);
-  this._optionContainer.find("select").bind("change", onChange);
+  this._optionContainer.find("input").on("change", onChange);
+  this._optionContainer.find("select").on("change", onChange);
 };
 
 Refine.LineBasedParserUI.prototype._scheduleUpdatePreview = function() {
@@ -205,7 +227,7 @@ Refine.LineBasedParserUI.prototype._updatePreview = function() {
       self._controller.getPreviewData(function(projectData) {
         self._progressContainer.hide();
 
-        new Refine.PreviewTable(projectData, self._dataContainer.unbind().empty());
+        new Refine.PreviewTable(projectData, self._dataContainer.off().empty());
       });
     }
   });
